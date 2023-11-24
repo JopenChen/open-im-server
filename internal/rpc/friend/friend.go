@@ -90,7 +90,7 @@ func Start(client registry.SvcDiscoveryRegistry, server *grpc.Server) error {
 	return nil
 }
 
-// ok.
+// ApplyToAddFriend 申请好友
 func (s *friendServer) ApplyToAddFriend(
 	ctx context.Context,
 	req *pbfriend.ApplyToAddFriendReq,

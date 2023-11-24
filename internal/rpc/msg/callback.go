@@ -69,6 +69,7 @@ func GetContent(msg *sdkws.MsgData) string {
 	}
 }
 
+// callbackBeforeSendSingleMsg 单聊消息发起前回调函数
 func callbackBeforeSendSingleMsg(ctx context.Context, msg *pbchat.SendMsgReq) error {
 	if !config.Config.Callback.CallbackBeforeSendSingleMsg.Enable {
 		return nil

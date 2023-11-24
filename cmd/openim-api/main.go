@@ -54,44 +54,47 @@ func run(port int, proPort int) error {
 
 		return fmt.Errorf(err)
 	}
+	// 创建 Redis 实例
 	rdb, err := cache.NewRedis()
 	if err != nil {
 		log.ZError(context.Background(), "Failed to initialize Redis", err)
-
 		return err
 	}
+
+	// 创建服务发现组件实例，支持 zk 和 k8s
 	log.ZInfo(context.Background(), "api start init discov client")
-
 	var client discoveryregistry.SvcDiscoveryRegistry
-
 	// Determine whether zk is passed according to whether it is a clustered deployment
 	client, err = kdisc.NewDiscoveryRegister(config.Config.Envs.Discovery)
 	if err != nil {
 		log.ZError(context.Background(), "Failed to initialize discovery register", err)
-
 		return err
 	}
+
+	// 创建 RPC 根节点
 	if err = client.CreateRpcRootNodes(config.Config.GetServiceNames()); err != nil {
 		log.ZError(context.Background(), "Failed to create RPC root nodes", err)
-
 		return err
 	}
+
+	// 将本服务的公共配置信息注册至服务发现实例中
 	log.ZInfo(context.Background(), "api register public config to discov")
 	if err = client.RegisterConf2Registry(constant.OpenIMCommonConfigKey, config.Config.EncodeConfig()); err != nil {
 		log.ZError(context.Background(), "Failed to register public config to discov", err)
-
 		return err
 	}
 	log.ZInfo(context.Background(), "api register public config to discov success")
+
+	// 基于 gin 框架创建路由实例
 	router := api.NewGinRouter(client, rdb)
-	//////////////////////////////
+	// 开启 Prometheus 监控
 	if config.Config.Prometheus.Enable {
 		p := ginProm.NewPrometheus("app", prommetrics.GetGinCusMetrics("Api"))
 		p.SetListenAddress(fmt.Sprintf(":%d", proPort))
 		p.Use(router)
 	}
-	/////////////////////////////////
 	log.ZInfo(context.Background(), "api init router success")
+
 	var address string
 	if config.Config.Api.ListenIP != "" {
 		address = net.JoinHostPort(config.Config.Api.ListenIP, strconv.Itoa(port))
@@ -103,7 +106,6 @@ func run(port int, proPort int) error {
 	err = router.Run(address)
 	if err != nil {
 		log.ZError(context.Background(), "api run failed", err, "address", address)
-
 		return err
 	}
 

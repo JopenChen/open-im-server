@@ -25,6 +25,7 @@ import (
 	"github.com/openimsdk/open-im-server/v3/pkg/common/config"
 )
 
+// isMessageHasReadEnabled 判断消息是否可读
 func isMessageHasReadEnabled(msgData *sdkws.MsgData) bool {
 	switch {
 	case msgData.ContentType == constant.HasReadReceipt && msgData.SessionType == constant.SingleChatType:

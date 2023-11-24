@@ -227,7 +227,7 @@ func (c *conversationServer) SetConversations(ctx context.Context,
 	return &pbconversation.SetConversationsResp{}, nil
 }
 
-// 获取超级大群开启免打扰的用户ID.
+// GetRecvMsgNotNotifyUserIDs 获取超级大群开启免打扰的用户ID.
 func (c *conversationServer) GetRecvMsgNotNotifyUserIDs(ctx context.Context, req *pbconversation.GetRecvMsgNotNotifyUserIDsReq) (*pbconversation.GetRecvMsgNotNotifyUserIDsResp, error) {
 	userIDs, err := c.conversationDatabase.FindRecvMsgNotNotifyUserIDs(ctx, req.GroupID)
 	if err != nil {
@@ -236,7 +236,7 @@ func (c *conversationServer) GetRecvMsgNotNotifyUserIDs(ctx context.Context, req
 	return &pbconversation.GetRecvMsgNotNotifyUserIDsResp{UserIDs: userIDs}, nil
 }
 
-// create conversation without notification for msg redis transfer.
+// CreateSingleChatConversations create conversation without notification for msg redis transfer.
 func (c *conversationServer) CreateSingleChatConversations(ctx context.Context,
 	req *pbconversation.CreateSingleChatConversationsReq,
 ) (*pbconversation.CreateSingleChatConversationsResp, error) {

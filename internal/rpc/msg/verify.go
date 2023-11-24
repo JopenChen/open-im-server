@@ -48,6 +48,7 @@ type MessageRevoked struct {
 	Seq                         uint32 `json:"seq"`
 }
 
+// messageVerification 消息校验
 func (m *msgServer) messageVerification(ctx context.Context, data *msg.SendMsgReq) error {
 	switch data.MsgData.SessionType {
 	case constant.SingleChatType:
@@ -126,6 +127,7 @@ func (m *msgServer) messageVerification(ctx context.Context, data *msg.SendMsgRe
 	}
 }
 
+// encapsulateMsgData 包装、完善消息内容
 func (m *msgServer) encapsulateMsgData(msg *sdkws.MsgData) {
 	msg.ServerMsgID = GetMsgID(msg.SendID)
 	if msg.SendTime == 0 {

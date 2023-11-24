@@ -99,7 +99,7 @@ type CommonMsgDatabase interface {
 	GetSendMsgStatus(ctx context.Context, id string) (int32, error)
 	SearchMessage(ctx context.Context, req *pbmsg.SearchMessageReq) (total int32, msgData []*sdkws.MsgData, err error)
 
-	// to mq
+	// MsgToMQ 向消息队列投递消息（kafka）
 	MsgToMQ(ctx context.Context, key string, msg2mq *sdkws.MsgData) error
 	MsgToModifyMQ(ctx context.Context, key, conversarionID string, msgs []*sdkws.MsgData) error
 	MsgToPushMQ(ctx context.Context, key, conversarionID string, msg2mq *sdkws.MsgData) (int32, int64, error)
@@ -152,6 +152,7 @@ type commonMsgDatabase struct {
 	producerToPush   *kafka.Producer
 }
 
+// MsgToMQ 向消息队列投递消息（kafka）
 func (db *commonMsgDatabase) MsgToMQ(ctx context.Context, key string, msg2mq *sdkws.MsgData) error {
 	_, _, err := db.producer.SendMessage(ctx, key, msg2mq)
 	return err

@@ -57,16 +57,19 @@ func Start(
 		return err
 	}
 	defer listener.Close()
+
 	client, err := kdisc.NewDiscoveryRegister(config.Config.Envs.Discovery)
 	if err != nil {
 		return utils.Wrap1(err)
 	}
 	defer client.Close()
+
 	client.AddOption(mw.GrpcClient(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	registerIP, err := network.GetRpcRegisterIP(config.Config.Rpc.RegisterIP)
 	if err != nil {
 		return err
 	}
+
 	var reg *prometheus.Registry
 	var metric *grpcprometheus.ServerMetrics
 	// ctx 中间件
@@ -79,8 +82,10 @@ func Start(
 	} else {
 		options = append(options, mw.GrpcServer())
 	}
+
 	srv := grpc.NewServer(options...)
 	defer srv.GracefulStop()
+
 	err = rpcFn(client, srv)
 	if err != nil {
 		return utils.Wrap1(err)

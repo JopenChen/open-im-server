@@ -31,20 +31,25 @@ import (
 	"github.com/OpenIMSDK/tools/utils"
 )
 
+// SendMsg 发送消息
 func (m *msgServer) SendMsg(ctx context.Context, req *pbmsg.SendMsgReq) (resp *pbmsg.SendMsgResp, error error) {
 	resp = &pbmsg.SendMsgResp{}
 	if req.MsgData != nil {
+		// 判断消息是否可读
 		flag := isMessageHasReadEnabled(req.MsgData)
 		if !flag {
 			return nil, errs.ErrMessageHasReadDisable.Wrap()
 		}
+
+		// 完善消息内容
 		m.encapsulateMsgData(req.MsgData)
+
 		switch req.MsgData.SessionType {
-		case constant.SingleChatType:
+		case constant.SingleChatType: // 单聊
 			return m.sendMsgSingleChat(ctx, req)
-		case constant.NotificationChatType:
+		case constant.NotificationChatType: // 通知消息
 			return m.sendMsgNotification(ctx, req)
-		case constant.SuperGroupChatType:
+		case constant.SuperGroupChatType: // 超级群聊
 			return m.sendMsgSuperGroupChat(ctx, req)
 		default:
 			return nil, errs.ErrArgs.Wrap("unknown sessionType")
@@ -142,11 +147,15 @@ func (m *msgServer) sendMsgNotification(
 	return resp, nil
 }
 
+// sendMsgSingleChat 发送单聊消息
 func (m *msgServer) sendMsgSingleChat(ctx context.Context, req *pbmsg.SendMsgReq) (resp *pbmsg.SendMsgResp, err error) {
+
+	// 消息校验
 	if err := m.messageVerification(ctx, req); err != nil {
 		return nil, err
 	}
 	isSend := true
+	// 通知
 	isNotification := msgprocessor.IsNotificationByMsg(req.MsgData)
 	if !isNotification {
 		isSend, err = m.modifyMessageByUserMessageReceiveOpt(
@@ -170,14 +179,18 @@ func (m *msgServer) sendMsgSingleChat(ctx context.Context, req *pbmsg.SendMsgReq
 		if err := callbackMsgModify(ctx, req); err != nil {
 			return nil, err
 		}
+		// 消息投递至消息队列（kafka）
 		if err := m.MsgDatabase.MsgToMQ(ctx, utils.GenConversationUniqueKeyForSingle(req.MsgData.SendID, req.MsgData.RecvID), req.MsgData); err != nil {
+			// 若投递失败，则记录
 			prommetrics.SingleChatMsgProcessFailedCounter.Inc()
 			return nil, err
 		}
+
 		err = callbackAfterSendSingleMsg(ctx, req)
 		if err != nil {
 			log.ZWarn(ctx, "CallbackAfterSendSingleMsg", err, "req", req)
 		}
+
 		resp = &pbmsg.SendMsgResp{
 			ServerMsgID: req.MsgData.ServerMsgID,
 			ClientMsgID: req.MsgData.ClientMsgID,

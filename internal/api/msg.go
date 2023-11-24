@@ -151,6 +151,7 @@ func (m *MessageApi) DeleteMsgPhysical(c *gin.Context) {
 	a2r.Call(msg.MsgClient.DeleteMsgPhysical, m.Client, c)
 }
 
+// getSendMsgReq 根据消息类型解析得到对应的目标请求结构体
 func (m *MessageApi) getSendMsgReq(c *gin.Context, req apistruct.SendMsg) (sendMsgReq *msg.SendMsgReq, err error) {
 	var data interface{}
 	log.ZDebug(c, "getSendMsgReq", "req", req.Content)
@@ -187,24 +188,31 @@ func (m *MessageApi) getSendMsgReq(c *gin.Context, req apistruct.SendMsg) (sendM
 	return m.newUserSendMsgReq(c, &req), nil
 }
 
+// SendMessage 发送消息
 func (m *MessageApi) SendMessage(c *gin.Context) {
 	req := apistruct.SendMsgReq{}
 	if err := c.BindJSON(&req); err != nil {
 		apiresp.GinError(c, errs.ErrArgs.WithDetail(err.Error()).Wrap())
 		return
 	}
+	// 判断是否为应用管理员
 	if !authverify.IsAppManagerUid(c) {
 		apiresp.GinError(c, errs.ErrNoPermission.Wrap("only app manager can send message"))
 		return
 	}
+	// 获取目标请求消息结构体
 	sendMsgReq, err := m.getSendMsgReq(c, req.SendMsg)
 	if err != nil {
 		log.ZError(c, "decodeData failed", err)
 		apiresp.GinError(c, err)
 		return
 	}
+
+	// 承接请求接收ID
 	sendMsgReq.MsgData.RecvID = req.RecvID
+
 	var status int
+	// RPC 请求发送消息
 	respPb, err := m.Client.SendMsg(c, sendMsgReq)
 	if err != nil {
 		status = constant.MsgSendFailed
@@ -212,13 +220,17 @@ func (m *MessageApi) SendMessage(c *gin.Context) {
 		apiresp.GinError(c, err)
 		return
 	}
+
 	status = constant.MsgSendSuccessed
+	// 向 RPC 服务确认消息发送成功
 	_, err = m.Client.SetSendMsgStatus(c, &msg.SetSendMsgStatusReq{
 		Status: int32(status),
 	})
 	if err != nil {
 		log.ZError(c, "SetSendMsgStatus failed", err)
 	}
+
+	// 返回结果
 	apiresp.GinSuccess(c, respPb)
 }
 

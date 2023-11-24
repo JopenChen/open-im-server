@@ -34,11 +34,13 @@ var (
 )
 
 const (
+	// maxRetry 重试次数
 	maxRetry = 10 // number of retries
 )
 
 // NewRedis Initialize redis connection.
 func NewRedis() (redis.UniversalClient, error) {
+	// 若已创建，则直接返回
 	if redisClient != nil {
 		return redisClient, nil
 	}
